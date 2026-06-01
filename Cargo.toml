@@ -14,3 +14,7 @@ lymui = "0.2.1"
 
 [build-dependencies]
 cbindgen = "^0.29.2"
+
+# /!\ Enable nightly toolchain whenever we want to use miri
+# [toolchain]
+# channel = "nightly"

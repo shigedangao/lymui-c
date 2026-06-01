@@ -14,8 +14,8 @@ pub mod mapping;
 #[derive(Debug, Default)]
 #[repr(C)]
 pub struct Color {
-    pub data: *mut color::ColorResult,
-    pub hex: *mut c_char,
+    pub data: *const color::ColorResult,
+    pub hex: *const c_char,
 }
 
 /// Represents an RGB generator result, including the generated color values.
@@ -251,7 +251,7 @@ pub extern "C" fn drop_color(color: Color) {
 
     if !color.hex.is_null() {
         unsafe {
-            let hex = CString::from_raw(color.hex);
+            let hex = CString::from_raw(color.hex as *mut c_char);
             drop(hex);
         }
     }
@@ -350,7 +350,7 @@ mod tests {
 
         // Reconstruct the vec which should contains the color data as a vector of f64
         let boxed_color = unsafe { Box::from_raw(color) };
-        let data = unsafe { Box::from_raw(boxed_color.data) };
+        let data = unsafe { Box::from_raw(boxed_color.data as *mut color::ColorResult) };
         let vv = unsafe { Vec::from_raw_parts(data.ptr as *mut f64, data.len, data.cap) };
 
         // Verify the vec contains the expected color data
@@ -373,7 +373,7 @@ mod tests {
         assert!(!color.is_null());
 
         let boxed_color = unsafe { Box::from_raw(color) };
-        let hex = unsafe { CString::from_raw(boxed_color.hex) };
+        let hex = unsafe { CString::from_raw(boxed_color.hex as *mut c_char) };
         assert_eq!(hex.to_string_lossy(), "#0064c8");
     }
 

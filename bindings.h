@@ -89,8 +89,8 @@ typedef struct ColorResult {
  * Represents a color result, including the color vector and optional hex string.
  */
 typedef struct Color {
-  struct ColorResult *data;
-  char *hex;
+  const struct ColorResult *data;
+  const char *hex;
 } Color;
 
 /**

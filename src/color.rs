@@ -78,9 +78,9 @@ pub fn get_color(
 /// # Safety
 ///
 /// The `color` pointer must be valid and not null.
-pub unsafe fn drop_color_result(color: *mut ColorResult) {
+pub unsafe fn drop_color_result(color: *const ColorResult) {
     if !color.is_null() {
-        let boxed_color = unsafe { Box::from_raw(color) };
+        let boxed_color = unsafe { Box::from_raw(color as *mut ColorResult) };
         if !boxed_color.ptr.is_null() {
             // reconstruct the fat pointer using the boxed color's length and pointer
             let sliced_ptr =
