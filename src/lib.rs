@@ -8,6 +8,7 @@ use std::sync::{LazyLock, Mutex};
 static LIB_ERROR: LazyLock<Mutex<Error>> = LazyLock::new(|| Mutex::new(Error::NoError));
 
 pub mod color;
+mod error;
 pub mod mapping;
 
 /// Represents a color result, including the color vector and optional hex string.

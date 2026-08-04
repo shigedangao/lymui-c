@@ -39,6 +39,7 @@ typedef enum ColorMapping {
   REC2100,
   SRGB,
   Xyy,
+  Tone,
 } ColorMapping;
 
 /**

@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use crate::error::Error;
 use lymui::{
     convert_rgb_subcolor, from_rgb_space_to_xyz_space, ops::SliceOps, prelude::*, rgb::FromRgb,
     xyz::Kind,
@@ -37,6 +37,7 @@ pub enum ColorMapping {
     REC2100,
     SRGB,
     Xyy,
+    Tone,
 }
 
 /// Represents the kind of color slice to use when converting a color.
@@ -123,11 +124,13 @@ pub fn construct_rgb_from_xyz_slice<
 /// # Returns
 ///
 /// A color slice of the specified size.
-fn get_color_slice_from_ptr<'a, T, const S: usize>(ptr: *mut c_void) -> Result<&'a [T; S]> {
+fn get_color_slice_from_ptr<'a, T, const S: usize>(
+    ptr: *mut c_void,
+) -> Result<&'a [T; S], Error<'a>> {
     let s = unsafe { std::slice::from_raw_parts(ptr as *mut T, S) };
     let slice = s
         .try_into()
-        .map_err(|err| anyhow!("invalid size {err:?}"))?;
+        .map_err(|_| Error::DeserializeInputColor("The input error may contain an invalid data. The input should be an array of a specific size"))?;
 
     Ok(slice)
 }
@@ -143,11 +146,11 @@ impl ColorMapping {
     /// # Returns
     ///
     /// Returns an [`Rgb`] color.
-    pub(crate) fn get_rgb_from_color_space_rgb(
+    pub(crate) fn get_rgb_from_color_space_rgb<'a>(
         &self,
         ptr: *mut c_void,
         lumens: &Lumens,
-    ) -> Result<Rgb> {
+    ) -> Result<Rgb, Error<'a>> {
         if *self == Self::Hex {
             let hex = unsafe { CStr::from_ptr(ptr as *const _) }
                 .to_string_lossy()
@@ -184,9 +187,14 @@ impl ColorMapping {
             Self::REC2100 => construct_rgb_from_xyz_slice::<3, Rec2100, f64>(ptr, lumens),
             Self::SRGB => construct_rgb_from_xyz_slice::<3, Srgb, f64>(ptr, lumens),
             Self::Xyy => construct_rgb_from_xyz_slice::<3, Xyy, f64>(ptr, lumens),
+            Self::Tone => {
+                return Err(Error::UnsupportedConversion(
+                    "Tone could not be converted to RGB",
+                ));
+            }
             _ => {
-                return Err(anyhow::anyhow!(
-                    "Unable to convert the given color space to RGB"
+                return Err(Error::UnsupportedConversion(
+                    "Unable to convert the given color space to RGB",
                 ));
             }
         };
@@ -209,7 +217,7 @@ impl ColorMapping {
         &self,
         rgb: Rgb,
         lumens: Option<Kind>,
-    ) -> Result<ColorConversionResult> {
+    ) -> Result<ColorConversionResult, Error<'_>> {
         // Special case for RGB color space, which returns the color as-is.
         if *self == Self::Rgb {
             return Ok(ColorConversionResult::Color(
@@ -262,7 +270,10 @@ impl ColorMapping {
             Self::Ansi256 => {
                 vec![Ansi::from_rgb(rgb, AnsiKind::C256).0 as f64]
             }
-            _ => return Err(anyhow::anyhow!("Color type is not supported")),
+            Self::Tone => {
+                vec![convert_rgb_subcolor::<Rgb, Tone>(rgb).0]
+            }
+            _ => return Err(Error::UnsupportedConversion("Color type is not supported")),
         };
 
         Ok(ColorConversionResult::Color(color_vec))

@@ -53,12 +53,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.102"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,15 +241,14 @@ dependencies = [
 
 [[package]]
 name = "lymui"
-version = "0.2.1"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e980178484f283a9ef8569ae855d9a264bbbc2baa567e6d7c24b01ecacf3eea2"
+checksum = "ba7be4c9cbaa6fc1cb863a0ab0361c63fd6e8d98ed4af0e88d7d7f00d9529767"
 
 [[package]]
 name = "lymui-c"
 version = "0.2.0"
 dependencies = [
- "anyhow",
  "cbindgen",
  "lymui",
 ]

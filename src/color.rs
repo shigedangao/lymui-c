@@ -1,6 +1,6 @@
 use super::Lumens;
+use crate::error::Error as LibError;
 use crate::mapping::{ColorConversionResult, ColorMapping};
-use anyhow::Result;
 use lymui::xyz::Kind;
 use std::ffi::{CString, c_char, c_void};
 
@@ -28,12 +28,12 @@ pub struct ColorResult {
 /// # Returns
 ///
 /// A pointer to the populated `Color` struct.
-pub fn get_color(
+pub fn get_color<'a>(
     data: *mut c_void,
     from: ColorMapping,
     target: ColorMapping,
     lumens: Lumens,
-) -> Result<(Option<ColorResult>, Option<*const c_char>)> {
+) -> Result<(Option<ColorResult>, Option<*const c_char>), LibError<'a>> {
     // Convert the raw color data to RGB using the specified color space.
     let converted_rgb = from.get_rgb_from_color_space_rgb(data, &lumens)?;
 
@@ -49,7 +49,9 @@ pub fn get_color(
     let color_slice = target.wrap_lymui_convert_space(converted_rgb, lib_lumens);
 
     let Ok(color_slice) = color_slice else {
-        return Err(anyhow::anyhow!("Failed to convert color space"));
+        return Err(LibError::DeserializeInputColor(
+            "Unable to convert to color space",
+        ));
     };
 
     match color_slice {
@@ -62,7 +64,11 @@ pub fn get_color(
             Ok((Some(ColorResult { cap, len, ptr }), None))
         }
         ColorConversionResult::Hex(hex) => {
-            let hex_c_str = CString::new(hex)?;
+            let hex_c_str = CString::new(hex).map_err(|_| {
+                LibError::UnsupportedConversion(
+                    "Unable to convert the generated hex string to cstring",
+                )
+            })?;
 
             Ok((None, Some(hex_c_str.into_raw())))
         }

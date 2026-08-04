@@ -48,6 +48,9 @@ int main(void) {
     Error err = get_error();
     printf("error: %d \n", err);
 
+    Color *tone = get_color(rgb, Rgb, Tone, None);
+    printf("tone: %f \n", tone->data->ptr[0]);
+
     // drop the color when you're done with it -> free the memory
     drop_color(*hex);
     drop_generator(shade);
